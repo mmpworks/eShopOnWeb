@@ -18,9 +18,16 @@ using Microsoft.eShopWeb.Web;
 using Microsoft.eShopWeb.Web.Configuration;
 using Microsoft.eShopWeb.Web.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using MMP.Herald.Quick;
+using MMP.Herald.Addons.MelAdapter;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Logging.AddConsole();
+// Herald migration (MEL provider swap). Every ILogger<T> call site is
+// unchanged; only the logging provider changes from the default console
+// to Herald.OSS. Herald's common MEL path is zero-allocation.
+builder.Logging.ClearProviders();
+var heraldLog = QuickLogBuilder.Create().WithConsoleSink().BuildAndCommit();
+builder.Logging.AddProvider(new HeraldLoggerProvider(heraldLog.Logger));
 
 if (builder.Environment.IsDevelopment() || builder.Environment.EnvironmentName == "Docker"){
     // Configure SQL Server (local)
